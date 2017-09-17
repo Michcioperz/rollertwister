@@ -1,0 +1,11 @@
+[submodule "static/mdl"]
+	path = static/mdl
+	url = git://github.com/google/material-design-lite
+	branch = release
+[submodule "static/mdi"]
+	path = static/mdi
+	url = git://github.com/google/material-design-icons
+	branch = master
+[submodule "static/dialog-polyfill"]
+	path = static/dialog-polyfill
+	url = git://github.com/GoogleChrome/dialog-polyfill
