@@ -113,8 +113,18 @@ func animePlay(w http.ResponseWriter, r *http.Request) {
 func handleQueue() {
 	for {
 		url := <-queue
-		log.Print("starting to play", url)
-		if exec.Command("omxplayer", url).Run() != nil {
+		log.Print("extracting url from ", url, " for omx")
+		vvurl, err := exec.Command("youtube-dl", "-g", url).Output()
+		var vurl string
+		if err != nil {
+			vurl = url
+			log.Print("extraction unsuccessful, trying default")
+		} else {
+			vurl = string(vvurl)
+			log.Print("extraction result: ", vurl)
+		}
+		log.Print("starting to play")
+		if exec.Command("omxplayer", vurl).Run() != nil {
 			exec.Command("mpv", "-v", "--fs", url).Run()
 		}
 		log.Print("playback finished")
