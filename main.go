@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -10,58 +11,78 @@ import (
 var queue chan string
 
 func animeList(w http.ResponseWriter, r *http.Request) {
+	log.Print("anime list requested")
 	seriesPage, err := FetchPageContents(UrlPseudoJoin("/"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Print(err)
 		return
 	}
 	series, err := ExtractSeriesList(seriesPage)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Print(err)
 		return
 	}
 	h := w.Header()
 	h.Add("Content-Type", "application/json")
 	j, _ := json.Marshal(series)
 	w.Write(j)
+	log.Print("anime list request fulfilled")
 }
 
 func animeDetail(w http.ResponseWriter, r *http.Request) {
 	pathSplit := strings.Split(r.URL.Path, "/")
 	if len(pathSplit[2]) < 1 {
 		http.Error(w, "you must specify animeme", http.StatusBadRequest)
+		log.Print("episodes list requested for unspecified anime")
 		return
 	}
+	log.Printf("episodes list requested for %v", pathSplit[2])
 	episodesPage, err := FetchPageContents(UrlPseudoJoin("/a/" + pathSplit[2]))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Print(err)
 		return
 	}
 	episodes, err := ExtractEpisodesList(episodesPage)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Print(err)
 		return
 	}
 	h := w.Header()
 	h.Add("Content-Type", "application/json")
 	j, _ := json.Marshal(episodes)
 	w.Write(j)
+	log.Printf("episodes list for %v fulfilled", pathSplit[2])
+}
+
+func enqueue(url string) bool {
+	select {
+	case queue <- url:
+		log.Print("enqueued:", url)
+		return true
+	default:
+		return false
+	}
 }
 
 func externPlay(w http.ResponseWriter, r *http.Request) {
 	url := r.FormValue("url")
 	if len(url) <3 {
 		http.Error(w, "you must specify url parameter", http.StatusBadRequest)
+		log.Print("extern request without url")
 		return
 	}
 	h := w.Header()
 	h.Add("Content-Type", "application/json")
-	select {
-	case queue <- url:
-		w.Write([]byte("{}"))
-	default:
+	if !enqueue(url) {
 		http.Error(w, "queue full", http.StatusTooManyRequests)
+		log.Print("queue full for", url)
+		return
 	}
+	w.Write([]byte("{}"))
 }
 
 func animePlay(w http.ResponseWriter, r *http.Request) {
@@ -80,18 +101,21 @@ func animePlay(w http.ResponseWriter, r *http.Request) {
 	}
 	h := w.Header()
 	h.Add("Content-Type", "application/json")
-	select {
-	case queue <- UrlPseudoJoin("/a/" + r.URL.Path[len("/play/"):]):
-		w.Write([]byte("{}"))
-	default:
+	url := UrlPseudoJoin("/a/" + r.URL.Path[len("/play/"):])
+	if !enqueue(url) {
 		http.Error(w, "queue full", http.StatusTooManyRequests)
+		log.Print("queue full for", url)
+		return
 	}
+	w.Write([]byte("{}"))
 }
 
 func handleQueue() {
 	for {
 		url := <-queue
-		exec.Command("mpv", "--fs", url).Run()
+		log.Print("starting to play", url)
+		exec.Command("mpv", "-v", "--fs", url).Run()
+		log.Print("playback finished")
 	}
 }
 
@@ -103,5 +127,6 @@ func main() {
 	http.HandleFunc("/play/", animePlay)
 	http.HandleFunc("/extern/", externPlay)
 	http.Handle("/", http.FileServer(http.Dir("static")))
+	log.Print("launching")
 	http.ListenAndServe(":3000", nil)
 }
