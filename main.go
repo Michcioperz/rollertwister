@@ -48,6 +48,22 @@ func animeDetail(w http.ResponseWriter, r *http.Request) {
 	w.Write(j)
 }
 
+func externPlay(w http.ResponseWriter, r *http.Request) {
+	url := r.FormValue("url")
+	if len(url) <3 {
+		http.Error(w, "you must specify url parameter", http.StatusBadRequest)
+		return
+	}
+	h := w.Header()
+	h.Add("Content-Type", "application/json")
+	select {
+	case queue <- url:
+		w.Write([]byte("{}"))
+	default:
+		http.Error(w, "queue full", http.StatusTooManyRequests)
+	}
+}
+
 func animePlay(w http.ResponseWriter, r *http.Request) {
 	pathSplit := strings.Split(r.URL.Path, "/")
 	if len(pathSplit) < 4 {
@@ -69,7 +85,6 @@ func animePlay(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("{}"))
 	default:
 		http.Error(w, "queue full", http.StatusTooManyRequests)
-
 	}
 }
 
@@ -81,11 +96,12 @@ func handleQueue() {
 }
 
 func main() {
-	queue = make(chan string, 10)
+	queue = make(chan string, 100)
 	go handleQueue()
 	http.HandleFunc("/list", animeList)
 	http.HandleFunc("/detail/", animeDetail)
 	http.HandleFunc("/play/", animePlay)
+	http.HandleFunc("/extern/", externPlay)
 	http.Handle("/", http.FileServer(http.Dir("static")))
 	http.ListenAndServe(":3000", nil)
 }
