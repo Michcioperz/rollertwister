@@ -127,6 +127,7 @@ func handleQueue() {
 		log.Print("starting to play")
 		omx := exec.Command("omxplayer", vurl)
 		omx.Stdout = os.Stderr
+		omx.Stdin = os.Stdin
 		omx.Stderr = os.Stderr
 		if omx.Run() != nil {
 			exec.Command("mpv", "-v", "--fs", url).Run()
