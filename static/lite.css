@@ -1,0 +1,50 @@
+* {
+  transition: all 0.5s;
+}
+body {
+  background: snow;
+  color: darkslategray;
+  margin: 0;
+}
+#search-box {
+  float: right;
+}
+#dialog-overlay {
+  position: sticky;
+  top: 0em;
+  width: 100%;
+  margin: 0;
+  background: rgba(47, 79, 49, 0.5);
+  color: snow;
+  margin-top: 0;
+  margin-bottom: 3em;
+}
+#series-list section {
+  display: block;
+  height: 5em;
+}
+#series-list section > * {
+  display: inline;
+  margin: 0.2em;
+}
+#series-list section button, button.close {
+  float: right;
+}
+.dialog > * {
+  margin: 0.2em;
+}
+.dialog {
+  background: lightslategray;
+  padding: 0.2em;
+  margin: 0.2em;
+}
+.dialog.alert {
+  background: darkslateblue;
+}
+.dialog.loading {
+  background: gainsboro;
+  color: darkslategray;
+}
+.filtered {
+  display: none !important;
+}
