@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -120,11 +121,14 @@ func handleQueue() {
 			vurl = url
 			log.Print("extraction unsuccessful, trying default")
 		} else {
-			vurl = string(vvurl)
+			vurl = strings.TrimSpace(string(vvurl))
 			log.Print("extraction result: ", vurl)
 		}
 		log.Print("starting to play")
-		if exec.Command("omxplayer", vurl).Run() != nil {
+		omx := exec.Command("omxplayer", vurl)
+		omx.Stdout = os.Stderr
+		omx.Stderr = os.Stderr
+		if omx.Run() != nil {
 			exec.Command("mpv", "-v", "--fs", url).Run()
 		}
 		log.Print("playback finished")
