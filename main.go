@@ -114,7 +114,9 @@ func handleQueue() {
 	for {
 		url := <-queue
 		log.Print("starting to play", url)
-		exec.Command("mpv", "-v", "--fs", url).Run()
+		if exec.Command("omxplayer", url).Run() != nil {
+			exec.Command("mpv", "-v", "--fs", url).Run()
+		}
 		log.Print("playback finished")
 	}
 }
