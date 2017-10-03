@@ -31,15 +31,42 @@ let globalLoader = loadingAlert('Fetching anime list…')
 fetch('/list').then(resp => resp.json()).then((series) => {
   globalLoader.parentNode.removeChild(globalLoader)
   let searchBox = document.createElement('input')
+  let searchQuery = ""
+  let searchQueryLength = 0
   searchBox.setAttribute('id', 'search-box')
   searchBox.addEventListener('submit', () => false)
+  function matchesQuery(query, elem) {
+    return elem.textContent.toLowerCase().includes(query)
+  }
   searchBox.addEventListener('input', () => {
-    for (let elem of seriesList.children) {
-      elem.classList.remove('filtered')
-      if (!elem.textContent.toLowerCase().includes(searchBox.value.toLowerCase())) {
-        elem.classList.add('filtered')
+    let newSearchQuery = searchBox.value.toLowerCase().trim()
+    let newSearchQueryLength = newSearchQuery.length
+    if (newSearchQuery == "") {
+      for (let elem of seriesList.querySelectorAll('section.filtered')) {
+        elem.classList.remove('filtered')
+      }
+    } else if (newSearchQuery.includes(searchQuery)) {
+      for (let elem of seriesList.querySelectorAll('section:not(.filtered)')) {
+        if (!matchesQuery(newSearchQuery, elem)) {
+          elem.classList.add('filtered')
+        }
+      }
+    } else if (searchQuery.includes(newSearchQuery)) {
+      for (let elem of seriesList.querySelectorAll('section.filtered')) {
+        if (matchesQuery(newSearchQuery, elem)) {
+          elem.classList.remove('filtered')
+        }
+      }
+    } else {
+      for (let elem of seriesList.children) {
+        elem.classList.remove('filtered')
+        if (!matchesQuery(newSearchQuery, elem)) {
+          elem.classList.add('filtered')
+        }
       }
     }
+    searchQuery = newSearchQuery
+    searchQueryLength = newSearchQueryLength
   })
   dialogOverlay.insertBefore(searchBox, dialogOverlay.firstElementChild)
   series.forEach((serie) => {
