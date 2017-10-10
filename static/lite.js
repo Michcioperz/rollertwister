@@ -4,13 +4,6 @@ function quickAlert (content) {
   let alertBox = document.createElement('div')
   alertBox.classList.add('dialog')
   alertBox.classList.add('alert')
-  if (typeof content === 'string') {
-    let alertText = document.createElement('h2')
-    alertText.textContent = content
-    alertBox.appendChild(alertText)
-  } else {
-    alertBox.appendChild(content)
-  }
   let alertButton = document.createElement('button')
   alertButton.classList.add('close')
   alertButton.type = 'button'
@@ -19,6 +12,13 @@ function quickAlert (content) {
     alertBox.parentNode.removeChild(alertBox)
   })
   alertBox.appendChild(alertButton)
+  if (typeof content === 'string') {
+    let alertText = document.createElement('h2')
+    alertText.textContent = content
+    alertBox.appendChild(alertText)
+  } else {
+    alertBox.appendChild(content)
+  }
   dialogOverlay.appendChild(alertBox)
 }
 function loadingAlert (content) {
