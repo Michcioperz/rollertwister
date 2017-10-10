@@ -1,21 +1,25 @@
 let seriesList = document.getElementById('series-list')
 let dialogOverlay = document.getElementById('dialog-overlay')
 function quickAlert (content) {
-  let alert = document.createElement('div')
-  alert.classList.add('dialog')
-  alert.classList.add('alert')
-  let alertText = document.createElement('h2')
-  alertText.textContent = content
-  alert.appendChild(alertText)
+  let alertBox = document.createElement('div')
+  alertBox.classList.add('dialog')
+  alertBox.classList.add('alert')
+  if (typeof content === 'string') {
+    let alertText = document.createElement('h2')
+    alertText.textContent = content
+    alertBox.appendChild(alertText)
+  } else {
+    alertBox.appendChild(content)
+  }
   let alertButton = document.createElement('button')
   alertButton.classList.add('close')
   alertButton.type = 'button'
   alertButton.textContent = 'Close'
   alertButton.addEventListener('click', () => {
-    alert.parentNode.removeChild(alert)
+    alertBox.parentNode.removeChild(alertBox)
   })
-  alert.appendChild(alertButton)
-  dialogOverlay.appendChild(alert)
+  alertBox.appendChild(alertButton)
+  dialogOverlay.appendChild(alertBox)
 }
 function loadingAlert (content) {
   let alert = document.createElement('div')
@@ -27,6 +31,45 @@ function loadingAlert (content) {
   dialogOverlay.appendChild(alert)
   return alert
 }
+let externButton = document.createElement('button')
+externButton.textContent = 'External URL'
+externButton.role = 'button'
+externButton.addEventListener('click', () => {
+  let externDialog = document.createElement('span')
+  let externField = document.createElement('input')
+  externField.type = 'url'
+  externDialog.appendChild(externField)
+  let externSubmit = document.createElement('button')
+  externSubmit.role = 'button'
+  externSubmit.textContent = 'Play'
+  externSubmit.addEventListener('click', () => {
+    let externUrl = externField.value.trimLeft()
+    let dialogLoader = loadingAlert('Requesting playback of ' + externUrl + '…')
+    let externForm = new FormData()
+    externForm.append('url', externUrl)
+    fetch('/extern/', {method: 'POST', body: externForm}).then((pr) => {
+      dialogLoader.parentNode.removeChild(dialogLoader)
+      switch (pr.status) {
+        case 200:
+          quickAlert(externUrl + ': added to queue')
+          break
+        case 429:
+          quickAlert(externUrl + ': queue is full')
+          break
+        default:
+          console.log(pr)
+      }
+    })
+    externDialog.parentNode.parentNode.removeChild(externDialog.parentNode)
+  })
+  externDialog.appendChild(externSubmit)
+  externField.addEventListener('submit', () => {
+    externSubmit.click()
+    return false
+  })
+  quickAlert(externDialog)
+})
+dialogOverlay.appendChild(externButton)
 let globalLoader = loadingAlert('Fetching anime list…')
 fetch('/list').then(resp => resp.json()).then((series) => {
   globalLoader.parentNode.removeChild(globalLoader)
@@ -131,6 +174,7 @@ fetch('/list').then(resp => resp.json()).then((series) => {
     seriesList.appendChild(card)
   })
 })
+
 document.addEventListener('keyup', (evt) => {
   switch (evt.key) {
     case 'Escape':
