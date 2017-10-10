@@ -169,5 +169,5 @@ func main() {
 	http.HandleFunc("/extern/", externPlay)
 	http.Handle("/", http.FileServer(http.Dir("static")))
 	log.Print("launching")
-	http.ListenAndServe(":3000", nil)
+	log.Fatal(http.ListenAndServe(":3000", nil))
 }
