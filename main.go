@@ -127,12 +127,15 @@ func handleQueue() {
 		url := <-queue
 		log.Print("extracting url from ", url, " for omx")
 		var vurl string = ""
-		if strings.HasPrefix(url, TwistRoot) {
+		if !strings.Contains(url, ":/") {
+			log.Print("heuristically assuming it's a local file")
+			vurl = url
+		} else if strings.HasPrefix(url, TwistRoot) {
 			page, err := FetchPageContents(url)
 			if err == nil {
 				vurl = ExtractTwistVideo(page)
 			} else {
-				log.Print("extrwction via twist methodics failed,", err)
+				log.Print("extraction via twist methodics failed,", err)
 			}
 		}
 		if vurl == "" {
