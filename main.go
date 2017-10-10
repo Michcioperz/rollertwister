@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -111,18 +112,38 @@ func animePlay(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
 }
 
+var VideoSrcRegexp = regexp.MustCompile(`<video src="([^"]+?)"`)
+
+func ExtractTwistVideo(body string) string {
+	match := VideoSrcRegexp.FindStringSubmatch(body)
+	if match != nil {
+		return UrlPseudoJoin(match[1])
+	}
+	return ""
+}
+
 func handleQueue() {
 	for {
 		url := <-queue
 		log.Print("extracting url from ", url, " for omx")
-		vvurl, err := exec.Command("youtube-dl", "-g", url).Output()
-		var vurl string
-		if err != nil {
-			vurl = url
-			log.Print("extraction unsuccessful, trying default")
-		} else {
-			vurl = strings.TrimSpace(string(vvurl))
-			log.Print("extraction result: ", vurl)
+		var vurl string = ""
+		if strings.HasPrefix(url, TwistRoot) {
+			page, err := FetchPageContents(url)
+			if err == nil {
+				vurl = ExtractTwistVideo(page)
+			} else {
+				log.Print("extrwction via twist methodics failed,", err)
+			}
+		}
+		if vurl == "" {
+			vvurl, err := exec.Command("youtube-dl", "-g", url).Output()
+			if err != nil {
+				vurl = url
+				log.Print("extraction unsuccessful, trying default")
+			} else {
+				vurl = strings.TrimSpace(string(vvurl))
+				log.Print("extraction result: ", vurl)
+			}
 		}
 		log.Print("starting to play")
 		omx := exec.Command("omxplayer", vurl)
